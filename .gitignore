@@ -23,5 +23,8 @@ _testmain.go
 *.test
 *.prof
 
-standard/standard
 standard/client/client
+standard/standard
+
+rpcx/client/client
+rpcx/rpcx
