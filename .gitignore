@@ -28,3 +28,6 @@ standard/standard
 
 rpcx/client/client
 rpcx/rpcx
+
+grpc/grpc
+grpc/client/client

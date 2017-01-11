@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+message Args {
+  int32 A = 1;
+  int32 B = 2;
+}
+
+message Reply {
+  int32 R = 1;
+}
+
+message Quotient {
+  int32 Quo = 1;
+  int32 Rem = 2;
+}
+
+service Arith {
+  // Sends a greeting
+  rpc Multiply (Args) returns (Reply) {}
+  rpc Divide (Args) returns (Quotient) {}
+}
