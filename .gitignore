@@ -31,3 +31,6 @@ rpcx/rpcx
 
 grpc/grpc
 grpc/client/client
+
+thrift/thrift
+thrift/client/client

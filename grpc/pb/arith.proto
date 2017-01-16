@@ -17,7 +17,6 @@ message Quotient {
 }
 
 service Arith {
-  // Sends a greeting
   rpc Multiply (Args) returns (Reply) {}
   rpc Divide (Args) returns (Quotient) {}
 }
