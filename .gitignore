@@ -29,6 +29,9 @@ standard/standard
 rpcx/client/client
 rpcx/rpcx
 
+rpcx_pool/client/client
+rpcx_pool/rpcx_pool
+
 grpc/grpc
 grpc/client/client
 
