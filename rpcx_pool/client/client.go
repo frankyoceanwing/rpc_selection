@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/pprof"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/frankyoceanwing/rpc_selection/common"
@@ -37,8 +38,8 @@ func main() {
 	s := &rpcx.DirectClientSelector{Network: "tcp", Address: *host}
 	c := &Config{
 		InitCap: 10,
-		MaxCap:  100,
-		Timeout: 60 * time.Second,
+		MaxCap:  20,
+		Timeout: 6000 * time.Millisecond,
 	}
 	pool, err := NewPool(c, s)
 	if err != nil {
@@ -47,11 +48,14 @@ func main() {
 
 	totalTime := time.Now().UnixNano()
 	times := make([]int64, 0, *total)
+	var success, timeout, fail int32
 	for i := 1; i <= n; i++ {
 		go func(i int) {
 			client := pool.Borrow()
 			if client == nil {
+				atomic.AddInt32(&timeout, 1)
 				log.Println("client is nil")
+				wg.Add(-m)
 				return
 			}
 
@@ -68,9 +72,12 @@ func main() {
 				singleTime = time.Now().UnixNano() - singleTime
 				times = append(times, singleTime)
 				if err != nil {
+					atomic.AddInt32(&fail, 1)
 					log.Printf("[%d]arith[%d/%d] ERROR:%v\n", i, k, m, err)
-					pool.Throw(client)
+					pool.Throw(client) // just throw it away
+					// pool.Return(rpcx.NewClient(s))
 				} else {
+					atomic.AddInt32(&success, 1)
 					log.Printf("[%d]arith[%d/%d] OK\n", i, k, m)
 					pool.Return(client)
 				}
@@ -83,6 +90,7 @@ func main() {
 	wg.Wait()
 
 	totalTime = (time.Now().UnixNano() - totalTime) / 1000000
+	fmt.Printf("done!\n")
 
 	l := len(times)
 	times2 := make([]float64, l, l)
@@ -100,6 +108,7 @@ func main() {
 	fmt.Printf("requests per client : %d\n", m)
 	fmt.Printf("took                : %d ms\n", totalTime)
 	fmt.Printf("throughput  (TPS)   : %d\n", int64(n*m)*1000/totalTime)
+	fmt.Printf("total:%d, success: %d, fail: %d(%.2f%%), timeout: %d(%.2f%%)\n", *total, success, fail, float64(fail*100)/float64(*total), timeout, float64(timeout*100)/float64(*total))
 	fmt.Printf("mean: %.f ns, median: %.f ns, max: %.f ns, min: %.f ns, p99: %.f ns\n", mean, median, max, min, p99)
 	fmt.Printf("mean: %d ms, median: %d ms, max: %d ms, min: %d ms, p99: %d ms\n", int64(mean/1000000), int64(median/1000000), int64(max/1000000), int64(min/1000000), int64(p99/1000000))
 }

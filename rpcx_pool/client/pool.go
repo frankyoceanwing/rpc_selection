@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"fmt"
-
 	"github.com/smallnest/rpcx"
 )
 
@@ -52,9 +50,8 @@ func (p *Pool) init() {
 
 // Borrow a client from the pool.
 func (p *Pool) Borrow() *rpcx.Client {
-	var c *rpcx.Client
 	select {
-	case c = <-p.clients:
+	case c := <-p.clients:
 		return c
 	default: // pool is empty
 		return p.tryNewClient()
@@ -62,13 +59,11 @@ func (p *Pool) Borrow() *rpcx.Client {
 }
 
 func (p *Pool) tryNewClient() *rpcx.Client {
-	var c *rpcx.Client
 	if p.getSize() >= p.config.MaxCap {
 		select {
-		case c = <-p.clients:
+		case c := <-p.clients:
 			return c
 		case <-time.After(p.config.Timeout):
-			fmt.Printf("timeout\n")
 			return nil
 		}
 	}
@@ -85,7 +80,10 @@ func (p *Pool) newClient() *rpcx.Client {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.size++
-	return rpcx.NewClient(p.clientSelector)
+	c := rpcx.NewClient(p.clientSelector)
+	c.Timeout = 3000 * time.Millisecond
+	c.Retries = 2
+	return c
 }
 
 // Return returns a client to the pool.
